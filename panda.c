@@ -51,6 +51,13 @@ PHP_INI_END()
 /* Every user-visible function in PHP should document itself in the source */
 /* {{{ proto string confirm_panda_compiled(string arg)
    Return a string to confirm that the module is compiled in */
+PHP_FUNCTION(panda)
+{
+		zend_string *strg;
+		strg = strpprint(0, "hello panda");
+		RETURN_STR(strg);
+}
+
 PHP_FUNCTION(confirm_panda_compiled)
 {
 	char *arg = NULL;
@@ -146,6 +153,7 @@ PHP_MINFO_FUNCTION(panda)
  * Every user visible function must have an entry in panda_functions[].
  */
 const zend_function_entry panda_functions[] = {
+	PHP_FE(panda, NULL)
 	PHP_FE(confirm_panda_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE_END	/* Must be the last line in panda_functions[] */
 };
