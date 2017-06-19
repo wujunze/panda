@@ -13,9 +13,9 @@ dnl [  --with-panda             Include panda support])
 
 dnl Otherwise use enable:
 
-dnl PHP_ARG_ENABLE(panda, whether to enable panda support,
-dnl Make sure that the comment is aligned:
-dnl [  --enable-panda           Enable panda support])
+PHP_ARG_ENABLE(panda, whether to enable panda support,
+Make sure that the comment is aligned:
+[  --enable-panda           Enable panda support])
 
 if test "$PHP_PANDA" != "no"; then
   dnl Write more examples of tests here...
