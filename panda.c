@@ -54,7 +54,7 @@ PHP_INI_END()
 PHP_FUNCTION(panda)
 {
 		zend_string *strg;
-		strg = strpprint(0, "hello panda");
+		strg = strpprintf(0, "hello panda");
 		RETURN_STR(strg);
 }
 
