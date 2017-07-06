@@ -5,6 +5,10 @@ Check for panda presence
 --FILE--
 <?php 
 echo "panda extension is available";
+
+    var_dump(default_value("int"));
+    var_dump(default_value("int",1));
+    var_dump(default_value('str','panda'));
 /*
 	you can add regression tests for your extension here
 
@@ -19,3 +23,6 @@ echo "panda extension is available";
 ?>
 --EXPECT--
 panda extension is available
+int(0)
+int(1)
+string(5) "panda"
