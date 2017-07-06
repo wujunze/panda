@@ -27,6 +27,12 @@
 #include "ext/standard/info.h"
 #include "php_panda.h"
 
+ZEND_BEGIN_ARG_INFO(default_value_arg_info, 0)
+                ZEND_ARG_INFO(0, type)
+                ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO()
+
+
 /* If you declare any globals in php_panda.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(panda)
 */
@@ -63,51 +69,10 @@ PHP_FUNCTION(panda)
  * @param execute_data
  * @param return_value
  *
+ * 实现扩展函数的传参
  *
- * 获取参数
-
-在PHP7中提供了两种获取参数的方法。zend_parse_parameters和FAST ZPP方式。
-zend_parse_parameters
-
-在PHP7之前一直使用zend_parse_parameters函数获取参数。这个函数的作用，就是把传入的参数转换为PHP内核中相应的类型，方便在PHP扩展中使用。 参数说明：
-第一个参数，参数个数。一般就使用ZEND_NUM_ARGS()，不需要改变。
-第二个参数，格式化字符串。这个格式化字符串的作用就是，指定传入参数与PHP内核类型的转换关系。
-代码中 S|z 的含义就是：
-
-S 表示参数是一个字符串。要把传入的参数转换为zend_string类型。
-| 表示之后的参数是可选。可以传，也可以不传。
-z 表示参数是多种类型。要把传入的参数转换为zval类型。
-除此之外，还有一些specifier，需要注意：
-
-！如果接收了一个PHP语言里的null变量，则直接把其转成C语言里的NULL，而不是封装成IS_NULL类型的zval。
-/ 如果传递过来的变量与别的变量共用一个zval，而且不是引用，则进行强制分离，新的zval的is_refgc==0, and refcountgc==1.
-更多格式化字符串的含义可以查看官方网站。https://wiki.php.net/rfc/fast_zpp
-
-FAST ZPP
-
-在PHP7中新提供的方式。是为了提高参数解析的性能。对应经常使用的方法，建议使用FAST ZPP方式。 使用方式： 以ZEND_PARSE_PARAMETERS_START(1, 2)开头。 第一个参数表示必传的参数个数，第二个参数表示最多传入的参数个数。 以ZEND_PARSE_PARAMETERS_END();结束。 中间是传入参数的解析。 值得注意的是，一般FAST ZPP的宏方法与zend_parse_parameters的specifier是一一对应的。如：
-Z_PARAM_OPTIONAL 对应 |
-Z_PARAM_STR 对应 S
-但是，Z_PARAM_ZVAL_EX方法比较特殊。它对应两个specifier，分别是 ! 和 / 。! 对应宏方法的第二个参数。/ 对应宏方法的第三个参数。如果想开启，只要设置为1即可。
-
-FAST ZPP相应的宏方法可以查看官方网站 https://wiki.php.net/rfc/fast_zpp#proposal
-
-返回值
-
-方法的返回值是使用RETURN_开头的宏方法进行返回的。常用的宏方法有：
-RETURN_NULL()        返回null
-RETURN_LONG(l)        返回整型
-RETURN_DOUBLE(d) 返回浮点型
-RETURN_STR(s)        返回一个字符串。参数是一个zend_string * 指针
-RETURN_STRING(s)    返回一个字符串。参数是一个char * 指针
-RETURN_STRINGL(s, l) 返回一个字符串。第二个参数是字符串长度。
-RETURN_EMPTY_STRING()    返回一个空字符串。
-RETURN_ARR(r)        返回一个数组。参数是zend_array *指针。
-RETURN_OBJ(r)         返回一个对象。参数是zend_object *指针。
-RETURN_ZVAL(zv, copy, dtor) 返回任意类型。参数是 zval *指针。
-RETURN_FALSE        返回false
-RETURN_TRUE            返回true
-更多宏方法请查看 Zend/zend_API.h中的相关代码。
+ * 参考文档  https://github.com/pangudashu/php7-internal/blob/master/7/func.md#762-函数参数解析
+ *
  */
 PHP_FUNCTION(default_value)
 {
@@ -239,6 +204,7 @@ PHP_MINFO_FUNCTION(panda)
  */
 const zend_function_entry panda_functions[] = {
 	PHP_FE(panda, NULL)
+	PHP_FE(default_value, default_value_arg_info)
 	PHP_FE(confirm_panda_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE_END	/* Must be the last line in panda_functions[] */
 };
