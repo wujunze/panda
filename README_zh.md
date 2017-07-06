@@ -27,3 +27,4 @@ git clone https://github.com/wujunze/panda
 1. [信海龙的博客](http://www.bo56.com/)
 2. [深入理解PHP内核](http://www.php-internals.com/)
 3. [PHP 扩展开发及内核应用相关内容](https://www.markbj.com/book/8x2e106/4294)
+4. [零基础学习PHP拓展开发](http://zhijia.io/essay/105250)
