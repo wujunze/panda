@@ -22,7 +22,6 @@
 #include "config.h"
 #endif
 
-#include <zend_vm_def.h>
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
@@ -110,30 +109,27 @@ PHP_FUNCTION(default_value)
 }
 
 
+PHP_FUNCTION(get_size)
+{
+        zval *val;
+        size_t size;
+        zend_string *result;
+        HashTable *myht;
 
-PHP_FUNCTION(get_size){
-    zval *val;
-    size_t size;
-    zend_string *result;
-    HashTable *myht;
+        if (zend_parse_parameters(ZEND_NUM_ARGS(), "z", &val) == FAILURE) {
+            return;
+        }
 
-    if(zend_get_parameters(ZEND_NUM_ARGS(), "z", &v) == FAILURE){
-        return;
-    }
-    // Z_TYPE_P(zval *) 获取zval变量的类型
-    if(Z_TYPE(val) == IS_STRING){
-        //Z_STRLEN_P(zval *) 获取字符串的长度。
-        result = strpprintf(0, "string size is %d", Z_STRLEN_P(val));
-    } else if(Z_TYPE(val) == IS_ARRAY){
-        myht = Z_ARRVAL_P(val);
-        //zend_array_count(HashTable *) 获取数组的元素个数。 zend_array 和 HashTable其实是相同的数据结构
-        result = strpprintf(0, "array dize is %d", zend_array_count(myht));
-    } else {
-        result = strpprintf(0, "can not support");
-    }
+        if (Z_TYPE_P(val) == IS_STRING) {
+            result = strpprintf(0, "string size is %d", Z_STRLEN_P(val));
+        } else if (Z_TYPE_P(val) == IS_ARRAY) {
+            myht = Z_ARRVAL_P(val);
+            result = strpprintf(0, "array size is %d", zend_array_count(myht));
+        } else {
+            result = strpprintf(0, "can not support");
+        }
 
-    RETURN_STR(result);
-
+        RETURN_STR(result);
 }
 
 
@@ -234,6 +230,7 @@ PHP_MINFO_FUNCTION(panda)
 const zend_function_entry panda_functions[] = {
 	PHP_FE(panda, NULL)
 	PHP_FE(default_value, default_value_arg_info)
+    PHP_FE(get_size, default_value_arg_info)
 	PHP_FE(confirm_panda_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE_END	/* Must be the last line in panda_functions[] */
 };
