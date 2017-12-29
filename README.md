@@ -1,5 +1,7 @@
 ## Develop a simple PHP extension to learn PHP extension development and the PHP kernel (PHP7)
 
+[![Build Status](https://travis-ci.org/wujunze/panda.svg?branch=master)](https://travis-ci.org/wujunze/panda)
+
 ## [中文文档](https://github.com/wujunze/panda/blob/master/README_zh.md)
 
 ### Install the extension
