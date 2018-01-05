@@ -132,6 +132,24 @@ PHP_FUNCTION(get_size)
         RETURN_STR(result);
 }
 
+PHP_FUNCTION(str_concat)
+{
+
+        zend_string *prefix, *subject, *result;
+        zval *string;
+
+        if (zend_parse_parameters(ZEND_NUM_ARGS(), "Sz", &prefix, &string) == FAILURE) {
+            return;
+        }
+
+        subject = zval_get_string(string);
+        if (zend_binary_strncmp(ZSTR_VAL(prefix), ZSTR_LEN(prefix), ZSTR_VAL(subject), ZSTR_LEN(subject), ZSTR_LEN(prefix)) == 0) {
+            RETURN_STR(subject);
+        }
+        result = strpprintf(0, "%s %s", ZSTR_VAL(prefix), ZSTR_VAL(subject));
+        RETURN_STR(result);
+}
+
 
 PHP_FUNCTION(confirm_panda_compiled)
 {
@@ -231,6 +249,7 @@ const zend_function_entry panda_functions[] = {
 	PHP_FE(panda, NULL)
 	PHP_FE(default_value, default_value_arg_info)
     PHP_FE(get_size, default_value_arg_info)
+    PHP_FE(str_concat, default_value_arg_info)
 	PHP_FE(confirm_panda_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE_END	/* Must be the last line in panda_functions[] */
 };
