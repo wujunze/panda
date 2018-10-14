@@ -11,7 +11,7 @@ git clone https://github.com/wujunze/panda
 ```
 3. 在php.ini最后添加
  ```$xslt
- [say]
+ [panda]
  extension = panda.so
 ```
 4. 重启php-fpm
@@ -28,3 +28,4 @@ git clone https://github.com/wujunze/panda
 2. [深入理解PHP内核](http://www.php-internals.com/)
 3. [PHP 扩展开发及内核应用相关内容](https://www.markbj.com/book/8x2e106/4294)
 4. [零基础学习PHP拓展开发](http://zhijia.io/essay/105250)
+5. [PHP 扩展开发 -- 使用 clion 配置](http://hihozhou.com/blog/2017/04/27/clion-php-ext.html)
