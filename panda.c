@@ -255,6 +255,32 @@ static void php_panda_init_globals(zend_panda_globals *panda_globals)
 */
 /* }}} */
 
+zend_class_entry *panda_ce;
+
+PHP_METHOD(panda, learn);
+PHP_METHOD(panda, look);
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_panda_learn, 0, 0, 1)
+                ZEND_ARG_INFO(0, love)
+ZEND_END_ARG_INFO()
+
+const zend_function_entry panda_methods[] = {
+        PHP_ME(panda, learn, arginfo_panda_learn, ZEND_ACC_PUBLIC)
+        PHP_ME(panda, look,  NULL,   ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+        {NULL, NULL, NULL}
+};
+
+
+PHP_METHOD(panda, learn)
+{
+    php_printf("我是learn方法\n");
+}
+
+PHP_METHOD(panda , look)
+{
+    php_printf("我是public类型的方法\n");
+}
+
 /**
  * 扩展初始化的时候调用此function
  *
@@ -264,6 +290,16 @@ static void php_panda_init_globals(zend_panda_globals *panda_globals)
  */
 PHP_MINIT_FUNCTION(panda)
 {
+    zend_class_entry ce;
+    INIT_CLASS_ENTRY(ce, "panda", panda_methods);
+
+    panda_ce = zend_register_internal_class(&ce);
+
+    zend_declare_property_null(panda_ce, "memory",  sizeof("memory") - 1, ZEND_ACC_PUBLIC);
+
+    zend_declare_property_bool(panda_ce, "type",  sizeof("type") - 1, false, ZEND_ACC_PUBLIC);
+
+
     zend_constant c;
     zend_string *key;
     zval value;
