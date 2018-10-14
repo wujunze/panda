@@ -12,7 +12,7 @@
   | obtain it through the world-wide-web, please send a note to          |
   | license@php.net so we can mail you a copy immediately.               |
   +----------------------------------------------------------------------+
-  | Author:                                                              |
+  | Author:  Panda  <itwujunze@gmail.com>                                |
   +----------------------------------------------------------------------+
 */
 
@@ -151,42 +151,76 @@ PHP_FUNCTION(str_concat)
 }
 
 PHP_FUNCTION(arr_concat)
-        {
-                zval *arr, *prefix, *entry, *prefix_entry, value;
-                zend_string *string_key, *result;
-                zend_ulong num_key;
+{
+    zval *arr, *prefix, *entry, *prefix_entry, value;
+    zend_string *string_key, *result;
+    zend_ulong num_key;
 
-                if (zend_parse_parameters(ZEND_NUM_ARGS(), "aa", &arr, &prefix) == FAILURE) {
-            return;
-        }
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "aa", &arr, &prefix) == FAILURE) {
+        return;
+    }
 
-                array_init_size(return_value, zend_hash_num_elements(Z_ARRVAL_P(arr)));
+    array_init_size(return_value, zend_hash_num_elements(Z_ARRVAL_P(arr)));
 
-                ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(arr), num_key, string_key, entry) {
-            if (string_key && zend_hash_exists(Z_ARRVAL_P(prefix), string_key)) {
-                prefix_entry = zend_hash_find(Z_ARRVAL_P(prefix), string_key);
-                if (Z_TYPE_P(entry) == IS_STRING && prefix_entry != NULL && Z_TYPE_P(prefix_entry) == IS_STRING) {
-                    result = strpprintf(0, "%s%s", Z_STRVAL_P(prefix_entry), Z_STRVAL_P(entry));
-                    ZVAL_STR(&value, result);
-                    zend_hash_update(Z_ARRVAL_P(return_value), string_key, &value);
+    ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(arr), num_key, string_key, entry) {
+                if (string_key && zend_hash_exists(Z_ARRVAL_P(prefix), string_key)) {
+                    prefix_entry = zend_hash_find(Z_ARRVAL_P(prefix), string_key);
+                    if (Z_TYPE_P(entry) == IS_STRING && prefix_entry != NULL && Z_TYPE_P(prefix_entry) == IS_STRING) {
+                        result = strpprintf(0, "%s%s", Z_STRVAL_P(prefix_entry), Z_STRVAL_P(entry));
+                        ZVAL_STR(&value, result);
+                        zend_hash_update(Z_ARRVAL_P(return_value), string_key, &value);
+                    }
+                } else if (string_key == NULL && zend_hash_index_exists(Z_ARRVAL_P(prefix), num_key)){
+                    prefix_entry = zend_hash_index_find(Z_ARRVAL_P(prefix), num_key);
+                    if (Z_TYPE_P(entry) == IS_STRING && prefix_entry != NULL && Z_TYPE_P(prefix_entry) == IS_STRING) {
+                        result = strpprintf(0, "%s%s", Z_STRVAL_P(prefix_entry), Z_STRVAL_P(entry));
+                        ZVAL_STR(&value, result);
+                        zend_hash_index_update(Z_ARRVAL_P(return_value), num_key, &value);
+                    }
+                } else if (string_key) {
+                    zend_hash_update(Z_ARRVAL_P(return_value), string_key, entry);
+                    zval_add_ref(entry);
+                } else  {
+                    zend_hash_index_update(Z_ARRVAL_P(return_value), num_key, entry);
+                    zval_add_ref(entry);
                 }
-            } else if (string_key == NULL && zend_hash_index_exists(Z_ARRVAL_P(prefix), num_key)){
-                prefix_entry = zend_hash_index_find(Z_ARRVAL_P(prefix), num_key);
-                if (Z_TYPE_P(entry) == IS_STRING && prefix_entry != NULL && Z_TYPE_P(prefix_entry) == IS_STRING) {
-                    result = strpprintf(0, "%s%s", Z_STRVAL_P(prefix_entry), Z_STRVAL_P(entry));
-                    ZVAL_STR(&value, result);
-                    zend_hash_index_update(Z_ARRVAL_P(return_value), num_key, &value);
-                }
-            } else if (string_key) {
-                zend_hash_update(Z_ARRVAL_P(return_value), string_key, entry);
-                zval_add_ref(entry);
-            } else  {
-                zend_hash_index_update(Z_ARRVAL_P(return_value), num_key, entry);
-                zval_add_ref(entry);
-            }
-        }ZEND_HASH_FOREACH_END();
+            }ZEND_HASH_FOREACH_END();
 
-        }
+}
+
+static void panda_hash_destroy(HashTable *ht)
+{
+    zend_string *key;
+    zval *element;
+    if (((ht)->u.flags & HASH_FLAG_INITIALIZED)) {
+        ZEND_HASH_FOREACH_STR_KEY_VAL(ht, key, element) {
+                    if (key) {
+                        free(key);
+                    }
+                    switch (Z_TYPE_P(element)) {
+                        case IS_STRING:
+                            free(Z_PTR_P(element));
+                            break;
+                        case IS_ARRAY:
+                            say_hash_destroy(Z_ARRVAL_P(element));
+                            break;
+                    }
+                } ZEND_HASH_FOREACH_END();
+        free(HT_GET_DATA_ADDR(ht));
+    }
+    free(ht);
+}
+
+//释放数组和字符串
+static void panda_entry_dtor_persistent(zval *zvalue)
+{
+    if (Z_TYPE_P(zvalue) == IS_ARRAY) {
+        panda_hash_destroy(Z_ARRVAL_P(zvalue));
+    } else if (Z_TYPE_P(zvalue) == IS_STRING) {
+        zend_string_release(Z_STR_P(zvalue));
+    }
+}
+
 
 PHP_FUNCTION(confirm_panda_compiled)
 {
@@ -221,25 +255,68 @@ static void php_panda_init_globals(zend_panda_globals *panda_globals)
 */
 /* }}} */
 
-/* {{{ PHP_MINIT_FUNCTION
+/**
+ * 扩展初始化的时候调用此function
+ *
+ * @param type
+ * @param module_number
+ * @return
  */
 PHP_MINIT_FUNCTION(panda)
 {
-	/* If you have INI entries, uncomment these lines
-	REGISTER_INI_ENTRIES();
-	*/
-	return SUCCESS;
-}
-/* }}} */
+    zend_constant c;
+    zend_string *key;
+    zval value;
+    /**
+     * 创建一个数组
+     */
+    ZVAL_NEW_PERSISTENT_ARR(&c.value);
+    /**
+     * 初始化数组
+     *
+     *  panda_entry_dtor_persistent  析构函数用于释放数组元素
+     */
+    zend_hash_init(Z_ARRVAL(c.value), 0, NULL,
+                   (dtor_func_t)panda_entry_dtor_persistent, 1);
+    add_index_long(&c.value, 0, 2);
+    key = zend_string_init("site", 4, 1);
+    ZVAL_STR(&value, zend_string_init("www.wujunze.com", 15, 1));
+    zend_hash_update(Z_ARRVAL(c.value), key, &value);
+    c.flags = CONST_CS|CONST_PERSISTENT;
+    c.name = zend_string_init("__ARR__", 7, 1);
+    c.module_number = module_number;
+    zend_register_constant(&c);
+    /**
+     *
+     * 宏方法的最后一个参数是一些标识符。
+     * CONST_PERSISTENT 表示为持久的。常驻内存。
+     * CONST_CS	表示为区分大小写。
+     */
+    REGISTER_STRINGL_CONSTANT("__SITE__", "www.wujunze.com", 15, CONST_PERSISTENT);
+    /**
+     * 带命名空间的宏方法
+     *
+     * 第一个参数就是命名空间
+     */
+    REGISTER_NS_STRINGL_CONSTANT("Panda", "__SITE__", "wujunze.com", 11, CONST_CS|CONST_PERSISTENT);
 
-/* {{{ PHP_MSHUTDOWN_FUNCTION
+}
+
+/**
+ *
+ * 扩展卸载的时候调用此方法
+ *
+ * @param type
+ * @param module_number
+ * @return
  */
 PHP_MSHUTDOWN_FUNCTION(panda)
 {
-	/* uncomment this line if you have INI entries
-	UNREGISTER_INI_ENTRIES();
-	*/
-	return SUCCESS;
+    zval *val;
+    val = zend_get_constant_str("__ARR__", 7);
+    panda_hash_destroy(Z_ARRVAL_P(val));
+    ZVAL_NULL(val);
+    return SUCCESS;
 }
 /* }}} */
 

@@ -6,7 +6,6 @@ compiler:
 
 os:
   - linux
-#  - osx
 
 php:
   - 7.0
