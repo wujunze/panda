@@ -10,6 +10,7 @@ os:
 
 php:
   - 7.0
+  - 7.1
 
 notifications:
   email: itwujunze@gmail.com
@@ -21,5 +22,6 @@ env:
 before_script:
     - ./travis/compile.sh
 
+# Run PHPs run-tests.php
 script:
-    - exit 0
+  - ./travis/run-test.sh
