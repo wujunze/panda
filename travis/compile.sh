@@ -1,2 +1,2 @@
 #!/bin/sh
-phpize && ./configure && make && make install
+phpize clean && phpize && ./configure && make && make install
