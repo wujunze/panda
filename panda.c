@@ -297,7 +297,7 @@ PHP_MINIT_FUNCTION(panda)
 
     zend_declare_property_null(panda_ce, "memory",  sizeof("memory") - 1, ZEND_ACC_PUBLIC);
 
-    zend_declare_property_bool(panda_ce, "type",  sizeof("type") - 1, false, ZEND_ACC_PUBLIC);
+    zend_declare_property_bool(panda_ce, "type",  sizeof("type") - 1, 0, ZEND_ACC_PUBLIC);
 
 
     zend_constant c;
