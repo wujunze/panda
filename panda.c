@@ -150,6 +150,43 @@ PHP_FUNCTION(str_concat)
         RETURN_STR(result);
 }
 
+PHP_FUNCTION(arr_concat)
+        {
+                zval *arr, *prefix, *entry, *prefix_entry, value;
+                zend_string *string_key, *result;
+                zend_ulong num_key;
+
+                if (zend_parse_parameters(ZEND_NUM_ARGS(), "aa", &arr, &prefix) == FAILURE) {
+            return;
+        }
+
+                array_init_size(return_value, zend_hash_num_elements(Z_ARRVAL_P(arr)));
+
+                ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(arr), num_key, string_key, entry) {
+            if (string_key && zend_hash_exists(Z_ARRVAL_P(prefix), string_key)) {
+                prefix_entry = zend_hash_find(Z_ARRVAL_P(prefix), string_key);
+                if (Z_TYPE_P(entry) == IS_STRING && prefix_entry != NULL && Z_TYPE_P(prefix_entry) == IS_STRING) {
+                    result = strpprintf(0, "%s%s", Z_STRVAL_P(prefix_entry), Z_STRVAL_P(entry));
+                    ZVAL_STR(&value, result);
+                    zend_hash_update(Z_ARRVAL_P(return_value), string_key, &value);
+                }
+            } else if (string_key == NULL && zend_hash_index_exists(Z_ARRVAL_P(prefix), num_key)){
+                prefix_entry = zend_hash_index_find(Z_ARRVAL_P(prefix), num_key);
+                if (Z_TYPE_P(entry) == IS_STRING && prefix_entry != NULL && Z_TYPE_P(prefix_entry) == IS_STRING) {
+                    result = strpprintf(0, "%s%s", Z_STRVAL_P(prefix_entry), Z_STRVAL_P(entry));
+                    ZVAL_STR(&value, result);
+                    zend_hash_index_update(Z_ARRVAL_P(return_value), num_key, &value);
+                }
+            } else if (string_key) {
+                zend_hash_update(Z_ARRVAL_P(return_value), string_key, entry);
+                zval_add_ref(entry);
+            } else  {
+                zend_hash_index_update(Z_ARRVAL_P(return_value), num_key, entry);
+                zval_add_ref(entry);
+            }
+        }ZEND_HASH_FOREACH_END();
+
+        }
 
 PHP_FUNCTION(confirm_panda_compiled)
 {
@@ -250,6 +287,7 @@ const zend_function_entry panda_functions[] = {
 	PHP_FE(default_value, default_value_arg_info)
     PHP_FE(get_size, default_value_arg_info)
     PHP_FE(str_concat, default_value_arg_info)
+    PHP_FE(arr_concat,	NULL)
 	PHP_FE(confirm_panda_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE_END	/* Must be the last line in panda_functions[] */
 };
