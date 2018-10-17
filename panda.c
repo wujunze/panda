@@ -270,10 +270,16 @@ const zend_function_entry panda_methods[] = {
         {NULL, NULL, NULL}
 };
 
-
 PHP_METHOD(panda, learn)
 {
-    php_printf("我是learn方法\n");
+    char *love = NULL;
+    size_t love_len;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &love, &love_len) == FAILURE) {
+        return;
+    }
+
+    zend_update_property_string(panda_ce,  getThis(), "memory", sizeof("memory") - 1, love);
 }
 
 PHP_METHOD(panda , look)
@@ -291,7 +297,7 @@ PHP_METHOD(panda , look)
 PHP_MINIT_FUNCTION(panda)
 {
     zend_class_entry ce;
-    INIT_CLASS_ENTRY(ce, "panda", panda_methods);
+    INIT_CLASS_ENTRY(ce, "Panda", panda_methods);
 
     panda_ce = zend_register_internal_class(&ce);
 

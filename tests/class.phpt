@@ -4,9 +4,11 @@ Check for panda presence
 <?php if (!extension_loaded("panda")) print "skip"; ?>
 --FILE--
 <?php
-$children = new panda();
+$children = new Panda();
+echo gettype($children->memory) . PHP_EOL;
 
-$children->learn("love");
+$children->learn("panda");
+echo $children->memory .PHP_EOL;
 $children->look();
 echo gettype($children->type) . PHP_EOL;
 /*
@@ -22,9 +24,11 @@ echo gettype($children->type) . PHP_EOL;
 */
 ?>
 --EXPECT--
-我是learn方法
+NULL
+panda
 我是public类型的方法
 boolean
+
 
 
 
