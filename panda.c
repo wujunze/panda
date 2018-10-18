@@ -188,6 +188,49 @@ PHP_FUNCTION(arr_concat)
 
 }
 
+
+PHP_FUNCTION(call_function)
+{
+    zval            *obj = NULL;
+    zval            *fun = NULL;
+    zval            *param = NULL;
+    zval            retval;
+    zval            args[1];
+
+#ifndef FAST_ZPP
+    /* Get function parameters and do error-checking. */
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "zzz", &obj, &fun, &param) == FAILURE) {
+        return;
+    }
+#else
+    ZEND_PARSE_PARAMETERS_START(3, 3)
+            Z_PARAM_ZVAL(obj)
+            Z_PARAM_ZVAL(fun)
+            Z_PARAM_ZVAL(param)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
+    args[0] = *param;
+    if (obj == NULL || Z_TYPE_P(obj) == IS_NULL) {
+        /**
+         * call_user_function_ex方法用于调用函数和方法。参数说明如下：
+         * 第一个参数：方法表。通常情况下，写 EG(function_table)
+         * 第二个参数：对象。如果不是调用对象的方法，而是调用函数，填写 NULL
+         * 第三个参数：方法名。
+         * 第四个参数：返回值。
+         * 第五个参数：参数个数。
+         * 第六个参数：参数值。是一个 zval 数组。
+         * 第七个参数：参数是否进行分离操作。详细的，你可以搜索下 PHP 参数分离。查看相关文章
+         * 第八个参数：符号表。一般情况写设置为 NULL 即可。
+         *
+         */
+        call_user_function_ex(EG(function_table), NULL, fun, &retval, 1, args, 0, NULL);
+    } else {
+        call_user_function_ex(EG(function_table), obj, fun, &retval, 1, args, 0, NULL);
+    }
+    RETURN_ZVAL(&retval, 0, 1);
+}
+
 static void panda_hash_destroy(HashTable *ht)
 {
     zend_string *key;
@@ -396,36 +439,6 @@ PHP_MINFO_FUNCTION(panda)
 	*/
 }
 /* }}} */
-
-PHP_FUNCTION(call_function)
-{
-    zval            *obj = NULL;
-    zval            *fun = NULL;
-    zval            *param = NULL;
-    zval            retval;
-    zval            args[1];
-
-#ifndef FAST_ZPP
-    /* Get function parameters and do error-checking. */
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "zzz", &obj, &fun, &param) == FAILURE) {
-        return;
-    }
-#else
-    ZEND_PARSE_PARAMETERS_START(3, 3)
-            Z_PARAM_ZVAL(obj)
-            Z_PARAM_ZVAL(fun)
-            Z_PARAM_ZVAL(param)
-    ZEND_PARSE_PARAMETERS_END();
-#endif
-
-    args[0] = *param;
-    if (obj == NULL || Z_TYPE_P(obj) == IS_NULL) {
-        call_user_function_ex(EG(function_table), NULL, fun, &retval, 1, args, 0, NULL);
-    } else {
-        call_user_function_ex(EG(function_table), obj, fun, &retval, 1, args, 0, NULL);
-    }
-    RETURN_ZVAL(&retval, 0, 1);
-}
 
 /* {{{ panda_functions[]
  *
