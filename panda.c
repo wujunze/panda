@@ -397,6 +397,36 @@ PHP_MINFO_FUNCTION(panda)
 }
 /* }}} */
 
+PHP_FUNCTION(call_function)
+{
+    zval            *obj = NULL;
+    zval            *fun = NULL;
+    zval            *param = NULL;
+    zval            retval;
+    zval            args[1];
+
+#ifndef FAST_ZPP
+    /* Get function parameters and do error-checking. */
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "zzz", &obj, &fun, &param) == FAILURE) {
+        return;
+    }
+#else
+    ZEND_PARSE_PARAMETERS_START(3, 3)
+            Z_PARAM_ZVAL(obj)
+            Z_PARAM_ZVAL(fun)
+            Z_PARAM_ZVAL(param)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
+    args[0] = *param;
+    if (obj == NULL || Z_TYPE_P(obj) == IS_NULL) {
+        call_user_function_ex(EG(function_table), NULL, fun, &retval, 1, args, 0, NULL);
+    } else {
+        call_user_function_ex(EG(function_table), obj, fun, &retval, 1, args, 0, NULL);
+    }
+    RETURN_ZVAL(&retval, 0, 1);
+}
+
 /* {{{ panda_functions[]
  *
  * Every user visible function must have an entry in panda_functions[].
@@ -406,6 +436,7 @@ const zend_function_entry panda_functions[] = {
 	PHP_FE(default_value, default_value_arg_info)
     PHP_FE(get_size, default_value_arg_info)
     PHP_FE(str_concat, default_value_arg_info)
+    PHP_FE(call_function, default_value_arg_info)
     PHP_FE(arr_concat,	NULL)
 	PHP_FE(confirm_panda_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE_END	/* Must be the last line in panda_functions[] */
