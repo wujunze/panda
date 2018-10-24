@@ -42,10 +42,15 @@ extern zend_module_entry panda_module_entry;
   	Declare any global variables you may need between the BEGIN
 	and END macros here:
 
+ //定义一个全局变量类型，代码在php_panda.h文件中
 ZEND_BEGIN_MODULE_GLOBALS(panda)
-	zend_long  global_value;
-	char *global_string;
+    zend_long  global_number;
+    char *global_string;
+    zend_bool global_boolean;
 ZEND_END_MODULE_GLOBALS(panda)
+
+//声明一个全局变量
+ZEND_DECLARE_MODULE_GLOBALS(panda)
 */
 
 /* Always refer to the globals in your function as PANDA_G(variable).

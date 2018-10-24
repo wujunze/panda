@@ -26,6 +26,7 @@
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "php_panda.h"
+#include <stdio.h>
 
 ZEND_BEGIN_ARG_INFO(default_value_arg_info, 0)
                 ZEND_ARG_INFO(0, type)
@@ -46,6 +47,9 @@ static int le_panda;
 PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("panda.global_value",      "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_panda_globals, panda_globals)
     STD_PHP_INI_ENTRY("panda.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_panda_globals, panda_globals)
+    STD_PHP_INI_ENTRY("panda.number",      "100", PHP_INI_ALL, OnUpdateLong, global_value, zend_panda_globals, panda_globals)
+    STD_PHP_INI_ENTRY("panda.string", "ab", PHP_INI_ALL, OnUpdateString, global_string, zend_panda_globals, panda_globals)
+    STD_PHP_INI_ENTRY("panda.boolean", "0", PHP_INI_ALL, OnUpdateBool, global_string, zend_panda_globals, panda_globals)
 PHP_INI_END()
 */
 /* }}} */
@@ -231,6 +235,16 @@ PHP_FUNCTION(call_function)
     RETURN_ZVAL(&retval, 0, 1);
 }
 
+PHP_FUNCTION(show_ini)
+{
+    zval arr;
+    array_init(&arr);
+    add_assoc_long_ex(&arr, "panda.number", 10, PANDA_G(global_number));
+    add_assoc_string_ex(&arr, "panda.string", 10, PANDA_G(global_string));
+    add_assoc_bool_ex(&arr, "panda.boolean", 11, PANDA_G(global_boolean));
+    RETURN_ZVAL(&arr, 0, 1);
+}
+
 static void panda_hash_destroy(HashTable *ht)
 {
     zend_string *key;
@@ -340,6 +354,7 @@ PHP_METHOD(panda , look)
 PHP_MINIT_FUNCTION(panda)
 {
     zend_class_entry ce;
+    REGISTER_INI_ENTRIES();
     INIT_CLASS_ENTRY(ce, "Panda", panda_methods);
 
     panda_ce = zend_register_internal_class(&ce);
@@ -385,6 +400,10 @@ PHP_MINIT_FUNCTION(panda)
      */
     REGISTER_NS_STRINGL_CONSTANT("Panda", "__SITE__", "wujunze.com", 11, CONST_CS|CONST_PERSISTENT);
 
+    // If you have INI entries, uncomment these lines
+    //REGISTER_INI_ENTRIES();
+    return SUCCESS;
+
 }
 
 /**
@@ -401,6 +420,8 @@ PHP_MSHUTDOWN_FUNCTION(panda)
     val = zend_get_constant_str("__ARR__", 7);
     panda_hash_destroy(Z_ARRVAL_P(val));
     ZVAL_NULL(val);
+    //销毁配置项
+    UNREGISTER_INI_ENTRIES();
     return SUCCESS;
 }
 /* }}} */
