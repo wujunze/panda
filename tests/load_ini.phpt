@@ -5,7 +5,9 @@ Check for panda presence
 --FILE--
 <?php
     $ini = show_ini();
-    var_dump($ini);
+    echo $ini['panda.number'] . PHP_EOL;
+    echo $ini['panda.string'] . PHP_EOL;
+    echo gettype($ini['panda.boolean']) . PHP_EOL;
 /*
         you can add regression tests for your extension here
 
@@ -19,13 +21,9 @@ Check for panda presence
 */
 ?>
 --EXPECT--
-array(3) {
-  ["panda.numb"]=>
-  int(100)
-  ["panda.stri"]=>
-  string(2) "ab"
-  ["panda.boole"]=>
-  bool(false)
-}
+100
+ab
+boolean
+
 
 

@@ -235,9 +235,9 @@ PHP_FUNCTION(show_ini)
 {
     zval arr;
     array_init(&arr);
-    add_assoc_long_ex(&arr, "panda.number", 10, PANDA_G(global_number));
-    add_assoc_string_ex(&arr, "panda.string", 10, PANDA_G(global_string));
-    add_assoc_bool_ex(&arr, "panda.boolean", 11, PANDA_G(global_boolean));
+    add_assoc_long_ex(&arr, "panda.number", 12, PANDA_G(global_number));
+    add_assoc_string_ex(&arr, "panda.string", 12, PANDA_G(global_string));
+    add_assoc_bool_ex(&arr, "panda.boolean", 13, PANDA_G(global_boolean));
     RETURN_ZVAL(&arr, 0, 1);
 }
 
