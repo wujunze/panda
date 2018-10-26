@@ -34,24 +34,20 @@ ZEND_BEGIN_ARG_INFO(default_value_arg_info, 0)
 ZEND_END_ARG_INFO()
 
 
-/* If you declare any globals in php_panda.h uncomment this:
+/* If you declare any globals in php_panda.h uncomment this: */
 ZEND_DECLARE_MODULE_GLOBALS(panda)
-*/
 
 /* True global resources - no need for thread safety here */
 static int le_panda;
 
 /* {{{ PHP_INI
  */
-/* Remove comments and fill if you need to have entries in php.ini
+/* Remove comments and fill if you need to have entries in php.ini  */
 PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("panda.global_value",      "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_panda_globals, panda_globals)
-    STD_PHP_INI_ENTRY("panda.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_panda_globals, panda_globals)
-    STD_PHP_INI_ENTRY("panda.number",      "100", PHP_INI_ALL, OnUpdateLong, global_value, zend_panda_globals, panda_globals)
+    STD_PHP_INI_ENTRY("panda.number",      "100", PHP_INI_ALL, OnUpdateLong, global_number, zend_panda_globals, panda_globals)
     STD_PHP_INI_ENTRY("panda.string", "ab", PHP_INI_ALL, OnUpdateString, global_string, zend_panda_globals, panda_globals)
-    STD_PHP_INI_ENTRY("panda.boolean", "0", PHP_INI_ALL, OnUpdateBool, global_string, zend_panda_globals, panda_globals)
+    STD_PHP_INI_ENTRY("panda.boolean", "0", PHP_INI_ALL, OnUpdateBool, global_boolean, zend_panda_globals, panda_globals)
 PHP_INI_END()
-*/
 /* }}} */
 
 /* Remove the following function when you have successfully modified config.m4
@@ -259,7 +255,7 @@ static void panda_hash_destroy(HashTable *ht)
                             free(Z_PTR_P(element));
                             break;
                         case IS_ARRAY:
-                            say_hash_destroy(Z_ARRVAL_P(element));
+                            panda_hash_destroy(Z_ARRVAL_P(element));
                             break;
                     }
                 } ZEND_HASH_FOREACH_END();
@@ -473,6 +469,7 @@ const zend_function_entry panda_functions[] = {
     PHP_FE(call_function, default_value_arg_info)
     PHP_FE(arr_concat,	NULL)
 	PHP_FE(confirm_panda_compiled,	NULL)		/* For testing, remove later. */
+	PHP_FE(show_ini,	NULL)		/* For function show_ini */
 	PHP_FE_END	/* Must be the last line in panda_functions[] */
 };
 /* }}} */
