@@ -247,8 +247,12 @@ void list_dir(const char *dir);
 
 /**
  *
- * 首先说下路径状态的判断。
-php_stat函数是 PHP 中is_dir函数在实现的时候，使用的一个函数。具体代码参见ext/standard/filestat.c文件的FileFunction宏方法。在 1092 行附近。这个函数是判断一个路径的状态。如，是否是文件夹等。一般在扩展实现的时候，不建议使用。这里只是为了演示，才使用的。
+ *
+首先说下路径状态的判断。
+php_stat函数是 PHP 中is_dir函数在实现的时候，使用的一个函数。
+ 具体代码参见ext/standard/filestat.c文件的FileFunction宏方法。
+ 在 1092 行附近。这个函数是判断一个路径的状态。如，是否是文件夹等。
+ 一般在扩展实现的时候，不建议使用。这里只是为了演示，才使用的。
 
 zend_stat宏方法。也是实现判断一个路径的状态。推荐在扩展中使用。如果调用有问题，会返回 - 1。
 
@@ -266,63 +270,64 @@ php_stream_closedir关闭目录流。参数是之前打开的流。
  *
  *
  */
+void list_dir(const char *dir);
+
 PHP_FUNCTION(list_dir)
-        {
-                char *dir;
-                size_t dir_len;
+{
+	char *dir;
+	size_t dir_len;
 
 #ifndef FAST_ZPP
-                /* Get function parameters and do error-checking. */
-                if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &dir, &dir_len) == FAILURE) {
-            return;
-        }
+    /* Get function parameters and do error-checking. */
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &dir, &dir_len) == FAILURE) {
+        return;
+    }
 #else
-        ZEND_PARSE_PARAMETERS_START(1, 1)
+    ZEND_PARSE_PARAMETERS_START(1, 1)
     Z_PARAM_PATH(dir, dir_len)
     ZEND_PARSE_PARAMETERS_END();
 #endif
 
 
-                php_stat(dir, (php_stat_len) dir_len, FS_IS_DIR, return_value);
+    php_stat(dir, (php_stat_len) dir_len, FS_IS_DIR, return_value);
 
-                if (Z_TYPE_P(return_value) == IS_FALSE) {
-            RETURN_NULL();
-        }
+    if (Z_TYPE_P(return_value) == IS_FALSE) {
+    	RETURN_NULL();
+    }
 
-                list_dir(dir);
+    list_dir(dir);
 
-                RETURN_NULL();
-        }
+    RETURN_NULL();
+}
 
 void list_dir(const char *dir)
 {
-    php_stream *stream;
-    int options = REPORT_ERRORS;
-    php_stream_dirent entry;
-    int path_len;
-    char path[MAXPATHLEN];
-    zend_stat_t st;
+	php_stream *stream;
+	int options = REPORT_ERRORS;
+	php_stream_dirent entry;
+	int path_len;
+	char path[MAXPATHLEN];
+	zend_stat_t st;
 
-    stream = php_stream_opendir(dir, options, NULL);
-    if (!stream) {
-        return;
-    }
+	stream = php_stream_opendir(dir, options, NULL);
+	if (!stream) {
+		return;
+	}
 
-    while(php_stream_readdir(stream, &entry)) {
-        if ((path_len = snprintf(path, sizeof(path), "%s/%s", dir, entry.d_name)) < 0) {
-            break;
-        }
-        if (zend_stat(path, &st) != -1 && S_ISDIR(st.st_mode) && strcmp(entry.d_name, ".") != 0
-            && strcmp(entry.d_name, "..") != 0) {
-            list_dir(path);
-        } else if (strcmp(entry.d_name, ".") != 0 && strcmp(entry.d_name, "..") != 0) {
-            PUTS(path);
-            PUTS("\n");
-        }
-    }
-    php_stream_closedir(stream);
+	while(php_stream_readdir(stream, &entry)) {
+		if ((path_len = snprintf(path, sizeof(path), "%s/%s", dir, entry.d_name)) < 0) {
+			break;
+	    }
+	    if (zend_stat(path, &st) != -1 && S_ISDIR(st.st_mode) && strcmp(entry.d_name, ".") != 0
+	    		&& strcmp(entry.d_name, "..") != 0) {
+	    	list_dir(path);
+	    } else if (strcmp(entry.d_name, ".") != 0 && strcmp(entry.d_name, "..") != 0) {
+	    	PUTS(path);
+	    	PUTS("\n");
+	    }
+	}
+	php_stream_closedir(stream);
 }
-
 
 static void panda_hash_destroy(HashTable *ht)
 {
