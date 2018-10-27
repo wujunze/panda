@@ -51,6 +51,13 @@ PHP_INI_BEGIN()
 PHP_INI_END()
 /* }}} */
 
+/* {{{ PHP_GINIT
+ */
+PHP_GINIT_FUNCTION(panda) {
+    memset(panda_globals, 0, sizeof(*panda_globals));
+}
+/* }}} */
+
 /* Remove the following function when you have successfully modified config.m4
    so that your module can be compiled into PHP, it exists only for testing
    purposes. */
@@ -575,7 +582,11 @@ zend_module_entry panda_module_entry = {
 	PHP_RSHUTDOWN(panda),	/* Replace with NULL if there's nothing to do at request end */
 	PHP_MINFO(panda),
 	PHP_PANDA_VERSION,
-	STANDARD_MODULE_PROPERTIES
+    PHP_MODULE_GLOBALS(panda),
+    PHP_GINIT(panda),
+    NULL,
+    NULL,
+    STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
 
