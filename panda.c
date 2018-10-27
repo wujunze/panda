@@ -244,6 +244,28 @@ PHP_FUNCTION(show_ini)
 
 void list_dir(const char *dir);
 
+
+/**
+ *
+ * 首先说下路径状态的判断。
+php_stat函数是 PHP 中is_dir函数在实现的时候，使用的一个函数。具体代码参见ext/standard/filestat.c文件的FileFunction宏方法。在 1092 行附近。这个函数是判断一个路径的状态。如，是否是文件夹等。一般在扩展实现的时候，不建议使用。这里只是为了演示，才使用的。
+
+zend_stat宏方法。也是实现判断一个路径的状态。推荐在扩展中使用。如果调用有问题，会返回 - 1。
+
+PHP 把一些 IO 操作都封装成了流操作。这些流操作都声明在main/php_streams.h文件中。下面我们说下，我们用到的流操作函数。
+
+php_stream_opendir函数是用于打开一个目录。
+* 第一个参数：路径
+* 第二个参数：选项。控制一些函数调用行为。定义在main/php_streams.h中。多个选项可以使用异或操作。如 int options = IGNORE_PATH | REPORT_ERRORS;
+
+php_stream_readdir读取目录流。
+* 第一个参数：上面函数打开的 stream 流
+* 第二个参数：php_stream_dirent 用于存储当前读取的信息。
+
+php_stream_closedir关闭目录流。参数是之前打开的流。
+ *
+ *
+ */
 PHP_FUNCTION(list_dir)
         {
                 char *dir;
