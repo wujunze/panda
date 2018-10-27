@@ -27,6 +27,7 @@
 #include "ext/standard/info.h"
 #include "php_panda.h"
 #include <stdio.h>
+#include "ext/standard/php_filestat.h"
 
 ZEND_BEGIN_ARG_INFO(default_value_arg_info, 0)
                 ZEND_ARG_INFO(0, type)
@@ -240,6 +241,66 @@ PHP_FUNCTION(show_ini)
     add_assoc_bool_ex(&arr, "panda.boolean", 13, PANDA_G(global_boolean));
     RETURN_ZVAL(&arr, 0, 1);
 }
+
+void list_dir(const char *dir);
+
+PHP_FUNCTION(list_dir)
+        {
+                char *dir;
+                size_t dir_len;
+
+#ifndef FAST_ZPP
+                /* Get function parameters and do error-checking. */
+                if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &dir, &dir_len) == FAILURE) {
+            return;
+        }
+#else
+        ZEND_PARSE_PARAMETERS_START(1, 1)
+    Z_PARAM_PATH(dir, dir_len)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
+
+                php_stat(dir, (php_stat_len) dir_len, FS_IS_DIR, return_value);
+
+                if (Z_TYPE_P(return_value) == IS_FALSE) {
+            RETURN_NULL();
+        }
+
+                list_dir(dir);
+
+                RETURN_NULL();
+        }
+
+void list_dir(const char *dir)
+{
+    php_stream *stream;
+    int options = REPORT_ERRORS;
+    php_stream_dirent entry;
+    int path_len;
+    char path[MAXPATHLEN];
+    zend_stat_t st;
+
+    stream = php_stream_opendir(dir, options, NULL);
+    if (!stream) {
+        return;
+    }
+
+    while(php_stream_readdir(stream, &entry)) {
+        if ((path_len = snprintf(path, sizeof(path), "%s/%s", dir, entry.d_name)) < 0) {
+            break;
+        }
+        if (zend_stat(path, &st) != -1 && S_ISDIR(st.st_mode) && strcmp(entry.d_name, ".") != 0
+            && strcmp(entry.d_name, "..") != 0) {
+            list_dir(path);
+        } else if (strcmp(entry.d_name, ".") != 0 && strcmp(entry.d_name, "..") != 0) {
+            PUTS(path);
+            PUTS("\n");
+        }
+    }
+    php_stream_closedir(stream);
+}
+
 
 static void panda_hash_destroy(HashTable *ht)
 {
@@ -468,8 +529,9 @@ const zend_function_entry panda_functions[] = {
     PHP_FE(str_concat, default_value_arg_info)
     PHP_FE(call_function, default_value_arg_info)
     PHP_FE(arr_concat,	NULL)
-	PHP_FE(confirm_panda_compiled,	NULL)		/* For testing, remove later. */
+	PHP_FE(confirm_panda_compiled,	NULL)
 	PHP_FE(show_ini,	NULL)		/* For function show_ini */
+	PHP_FE(list_dir,	NULL)		/* For function list_dir */
 	PHP_FE_END	/* Must be the last line in panda_functions[] */
 };
 /* }}} */
