@@ -26,6 +26,8 @@
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "php_panda.h"
+#include <stdio.h>
+#include "ext/standard/php_filestat.h"
 
 ZEND_BEGIN_ARG_INFO(default_value_arg_info, 0)
                 ZEND_ARG_INFO(0, type)
@@ -33,21 +35,27 @@ ZEND_BEGIN_ARG_INFO(default_value_arg_info, 0)
 ZEND_END_ARG_INFO()
 
 
-/* If you declare any globals in php_panda.h uncomment this:
+/* If you declare any globals in php_panda.h uncomment this: */
 ZEND_DECLARE_MODULE_GLOBALS(panda)
-*/
 
 /* True global resources - no need for thread safety here */
 static int le_panda;
 
 /* {{{ PHP_INI
  */
-/* Remove comments and fill if you need to have entries in php.ini
+/* Remove comments and fill if you need to have entries in php.ini  */
 PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("panda.global_value",      "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_panda_globals, panda_globals)
-    STD_PHP_INI_ENTRY("panda.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_panda_globals, panda_globals)
+    STD_PHP_INI_ENTRY("panda.number",      "100", PHP_INI_ALL, OnUpdateLong, global_number, zend_panda_globals, panda_globals)
+    STD_PHP_INI_ENTRY("panda.string", "ab", PHP_INI_ALL, OnUpdateString, global_string, zend_panda_globals, panda_globals)
+    STD_PHP_INI_ENTRY("panda.boolean", "0", PHP_INI_ALL, OnUpdateBool, global_boolean, zend_panda_globals, panda_globals)
 PHP_INI_END()
-*/
+/* }}} */
+
+/* {{{ PHP_GINIT
+ */
+PHP_GINIT_FUNCTION(panda) {
+    memset(panda_globals, 0, sizeof(*panda_globals));
+}
 /* }}} */
 
 /* Remove the following function when you have successfully modified config.m4
@@ -231,6 +239,103 @@ PHP_FUNCTION(call_function)
     RETURN_ZVAL(&retval, 0, 1);
 }
 
+PHP_FUNCTION(show_ini)
+{
+    zval arr;
+    array_init(&arr);
+    add_assoc_long_ex(&arr, "panda.number", 12, PANDA_G(global_number));
+    add_assoc_string_ex(&arr, "panda.string", 12, PANDA_G(global_string));
+    add_assoc_bool_ex(&arr, "panda.boolean", 13, PANDA_G(global_boolean));
+    RETURN_ZVAL(&arr, 0, 1);
+}
+
+void list_dir(const char *dir);
+
+
+/**
+ *
+ *
+首先说下路径状态的判断。
+php_stat函数是 PHP 中is_dir函数在实现的时候，使用的一个函数。
+ 具体代码参见ext/standard/filestat.c文件的FileFunction宏方法。
+ 在 1092 行附近。这个函数是判断一个路径的状态。如，是否是文件夹等。
+ 一般在扩展实现的时候，不建议使用。这里只是为了演示，才使用的。
+
+zend_stat宏方法。也是实现判断一个路径的状态。推荐在扩展中使用。如果调用有问题，会返回 - 1。
+
+PHP 把一些 IO 操作都封装成了流操作。这些流操作都声明在main/php_streams.h文件中。下面我们说下，我们用到的流操作函数。
+
+php_stream_opendir函数是用于打开一个目录。
+* 第一个参数：路径
+* 第二个参数：选项。控制一些函数调用行为。定义在main/php_streams.h中。多个选项可以使用异或操作。如 int options = IGNORE_PATH | REPORT_ERRORS;
+
+php_stream_readdir读取目录流。
+* 第一个参数：上面函数打开的 stream 流
+* 第二个参数：php_stream_dirent 用于存储当前读取的信息。
+
+php_stream_closedir关闭目录流。参数是之前打开的流。
+ *
+ *
+ */
+void list_dir(const char *dir);
+
+PHP_FUNCTION(list_dir)
+{
+	char *dir;
+	size_t dir_len;
+
+#ifndef FAST_ZPP
+    /* Get function parameters and do error-checking. */
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &dir, &dir_len) == FAILURE) {
+        return;
+    }
+#else
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+    Z_PARAM_PATH(dir, dir_len)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
+
+    php_stat(dir, (php_stat_len) dir_len, FS_IS_DIR, return_value);
+
+    if (Z_TYPE_P(return_value) == IS_FALSE) {
+    	RETURN_NULL();
+    }
+
+    list_dir(dir);
+
+    RETURN_NULL();
+}
+
+void list_dir(const char *dir)
+{
+	php_stream *stream;
+	int options = REPORT_ERRORS;
+	php_stream_dirent entry;
+	int path_len;
+	char path[MAXPATHLEN];
+	zend_stat_t st;
+
+	stream = php_stream_opendir(dir, options, NULL);
+	if (!stream) {
+		return;
+	}
+
+	while(php_stream_readdir(stream, &entry)) {
+		if ((path_len = snprintf(path, sizeof(path), "%s/%s", dir, entry.d_name)) < 0) {
+			break;
+	    }
+	    if (zend_stat(path, &st) != -1 && S_ISDIR(st.st_mode) && strcmp(entry.d_name, ".") != 0
+	    		&& strcmp(entry.d_name, "..") != 0) {
+	    	list_dir(path);
+	    } else if (strcmp(entry.d_name, ".") != 0 && strcmp(entry.d_name, "..") != 0) {
+	    	PUTS(path);
+	    	PUTS("\n");
+	    }
+	}
+	php_stream_closedir(stream);
+}
+
 static void panda_hash_destroy(HashTable *ht)
 {
     zend_string *key;
@@ -245,7 +350,7 @@ static void panda_hash_destroy(HashTable *ht)
                             free(Z_PTR_P(element));
                             break;
                         case IS_ARRAY:
-                            say_hash_destroy(Z_ARRVAL_P(element));
+                            panda_hash_destroy(Z_ARRVAL_P(element));
                             break;
                     }
                 } ZEND_HASH_FOREACH_END();
@@ -340,6 +445,7 @@ PHP_METHOD(panda , look)
 PHP_MINIT_FUNCTION(panda)
 {
     zend_class_entry ce;
+    REGISTER_INI_ENTRIES();
     INIT_CLASS_ENTRY(ce, "Panda", panda_methods);
 
     panda_ce = zend_register_internal_class(&ce);
@@ -385,6 +491,10 @@ PHP_MINIT_FUNCTION(panda)
      */
     REGISTER_NS_STRINGL_CONSTANT("Panda", "__SITE__", "wujunze.com", 11, CONST_CS|CONST_PERSISTENT);
 
+    // If you have INI entries, uncomment these lines
+    //REGISTER_INI_ENTRIES();
+    return SUCCESS;
+
 }
 
 /**
@@ -401,6 +511,8 @@ PHP_MSHUTDOWN_FUNCTION(panda)
     val = zend_get_constant_str("__ARR__", 7);
     panda_hash_destroy(Z_ARRVAL_P(val));
     ZVAL_NULL(val);
+    //销毁配置项
+    UNREGISTER_INI_ENTRIES();
     return SUCCESS;
 }
 /* }}} */
@@ -451,7 +563,9 @@ const zend_function_entry panda_functions[] = {
     PHP_FE(str_concat, default_value_arg_info)
     PHP_FE(call_function, default_value_arg_info)
     PHP_FE(arr_concat,	NULL)
-	PHP_FE(confirm_panda_compiled,	NULL)		/* For testing, remove later. */
+	PHP_FE(confirm_panda_compiled,	NULL)
+	PHP_FE(show_ini,	NULL)		/* For function show_ini */
+	PHP_FE(list_dir,	NULL)		/* For function list_dir */
 	PHP_FE_END	/* Must be the last line in panda_functions[] */
 };
 /* }}} */
@@ -468,7 +582,11 @@ zend_module_entry panda_module_entry = {
 	PHP_RSHUTDOWN(panda),	/* Replace with NULL if there's nothing to do at request end */
 	PHP_MINFO(panda),
 	PHP_PANDA_VERSION,
-	STANDARD_MODULE_PROPERTIES
+    PHP_MODULE_GLOBALS(panda),
+    PHP_GINIT(panda),
+    NULL,
+    NULL,
+    STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
 
