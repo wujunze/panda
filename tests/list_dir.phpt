@@ -4,7 +4,7 @@ Check for panda presence
 <?php if (!extension_loaded("panda")) print "skip"; ?>
 --FILE--
 <?php
-    list_dir("./travis/");
+    list_dir("./travis");
 /*
         you can add regression tests for your extension here
 
@@ -18,8 +18,8 @@ Check for panda presence
 */
 ?>
 --EXPECT--
-./travis//compile.sh
-./travis//run-test.sh
+./travis/compile.sh
+./travis/run-test.sh
 
 
 
